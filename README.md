@@ -86,11 +86,9 @@ The frontend will start at `http://localhost:5173`.
 
 ## Code Example
 
-```go
 func main() {
     fmt.Println("Hello, Cloud Engineer!")
 }
-```
 
 ## Notes
 
