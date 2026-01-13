@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cloud
+      POSTGRES_PASSWORD: cloud
+      POSTGRES_DB: cloud_learning
+    ports:
+      - "5432:5432"
+    volumes:
+      - cloud_pgdata:/var/lib/postgresql/data
+
+volumes:
+  cloud_pgdata:
