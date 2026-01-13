@@ -153,3 +153,28 @@ You can gradually add features day by day:
 - **Day N+5**: Deploy to cloud
 
 Happy learning! 🚀
+
+## Data Migration (SQLite → PostgreSQL)
+
+During development, this project initially used SQLite for simplicity.
+When transitioning to PostgreSQL, data was migrated using a one-off migration script.
+
+### Migration Script
+
+The following command was used to migrate existing data from SQLite to PostgreSQL:
+
+```bash
+POSTGRES_URL="postgresql+psycopg://cloud:cloud@localhost:5432/cloud_learning" \
+python migrate_sqlite_to_postgres.py
+```
+
+### What this command does
+
+- The shell starts a new process to run `migrate_sqlite_to_postgres.py`
+- Before the process starts, the `POSTGRES_URL` environment variable is injected **into that process only**
+- The script reads:
+  - the local SQLite database (`cloud_learning.db`)
+  - and writes the data into PostgreSQL using the provided connection URL
+- When the process exits, the environment variable disappears with it
+
+No configuration file is modified — the environment variable exists only for the lifetime of this process.
