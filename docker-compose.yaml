@@ -4,13 +4,47 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: cloud
-      POSTGRES_PASSWORD: cloud
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: cloud_learning
     ports:
       - "5432:5432"
     volumes:
       - cloud_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d cloud_learning"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    image: my-backend:compose
+    environment:
+      ENV: prod
+      DATABASE_URL: postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@postgres:5432/cloud_learning
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      retries: 3
+
+  frontend:
+    image: my-frontend:compose
+    ports:
+      - "5173:80"
+      - "80:80"
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   cloud_pgdata:
+
+# secrets:
+#   db_password:
+#     file: ./db_password.txt
