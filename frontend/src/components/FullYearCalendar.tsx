@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { DayRecord } from '../types';
 import { updateDay } from '../api';
 
@@ -79,7 +78,6 @@ const FullYearCalendar: React.FC<FullYearCalendarProps> = ({
       <div className="grid grid-cols-3 gap-6">
         {monthNames.map((monthName, monthIndex) => {
           const daysArray = getDaysInMonth(year, monthIndex);
-          const isCurrentMonth = year === new Date().getFullYear() && monthIndex === new Date().getMonth();
 
           return (
             <div key={monthIndex} className="mb-6">
