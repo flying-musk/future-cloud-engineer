@@ -4,6 +4,7 @@ metadata:
   name: postgres
   namespace: future-cloud-engineer
 spec:
+  type: ClusterIP
   ports:
     - port: 5432
   selector:
