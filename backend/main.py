@@ -26,8 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# 建表（demo / 小專案很方便）
 @app.on_event("startup")
 def startup_event():
     Base.metadata.create_all(bind=engine)
@@ -45,6 +43,29 @@ def get_db():
 def read_root():
     return {"message": "Cloud Learning Tracker API"}
 
+@app.get("/ping")
+def liveness_check():
+    # Liveness Probe: Verifies if the application process is still running.
+    return {"status": "alive"}
+
+
+@app.get("/health")
+def readiness_check(db: Session = Depends(get_db)):
+    # Readiness Probe: Verifies if the database connection and ORM session are functional.
+    try:
+        db.execute(select(1)) 
+        
+        return {
+            "status": "ready",
+            "database": "connected",
+            "url": os.getenv("DATABASE_URL", "sqlite:///./cloud_learning.db").split("@")[-1]
+        }
+    except Exception as e:
+        # Returning HTTP 500: signal K8s to not routing traffic to this Pod
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Database connection failed: {str(e)}"
+        )
 
 @app.get("/api/days", response_model=list[DayRecordOut])
 def get_all_days(db: Session = Depends(get_db)):
@@ -58,7 +79,6 @@ def get_day_by_date(date: str, db: Session = Depends(get_db)):
     stmt = select(DayRecord).where(DayRecord.date == date)
     row = db.execute(stmt).scalar_one_or_none()
     if row is None:
-        # 跟你原本一樣：找不到就回預設
         return DayRecordOut(date=date, completed=False, content="")
     return row
 
@@ -92,7 +112,6 @@ def update_day(date: str, payload: DayRecordUpdate, db: Session = Depends(get_db
     now = datetime.now().isoformat()
 
     if record is None:
-        # upsert: 不存在就建立
         record = DayRecord(
             date=date,
             completed=True if payload.completed is True else False,
@@ -104,7 +123,6 @@ def update_day(date: str, payload: DayRecordUpdate, db: Session = Depends(get_db
         db.refresh(record)
         return record
 
-    # 存在就更新（只更新有帶的欄位）
     if payload.completed is not None:
         record.completed = payload.completed
     if payload.content is not None:
@@ -114,11 +132,3 @@ def update_day(date: str, payload: DayRecordUpdate, db: Session = Depends(get_db
     db.commit()
     db.refresh(record)
     return record
-
-
-@app.get("/health")
-def health_check():
-    return {
-        "status": "ok",
-        "db": os.getenv("DATABASE_URL", "sqlite:///./cloud_learning.db"),
-    }

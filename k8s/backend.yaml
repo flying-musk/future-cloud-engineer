@@ -4,7 +4,7 @@ metadata:
   name: backend
   namespace: future-cloud-engineer
 spec:
-  type: ClusterIP # default type: ClusterIP
+  type: ClusterIP
   ports:
     - port: 8000
   selector:
@@ -25,6 +25,16 @@ spec:
       labels:
         app: backend
     spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:16-alpine
+        # until condition; do
+        #   something
+        # done
+        command: [
+          'sh', '-c', 
+          'until pg_isready -h postgres -p 5432; do echo waiting for database; sleep 2; done;'
+        ]
       containers:
       - name: backend
         image: my-backend:compose
@@ -42,9 +52,12 @@ spec:
           httpGet:
             path: /health
             port: 8000
-          initialDelaySeconds: 10
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 3
         livenessProbe:
           httpGet:
-            path: /health
+            path: /ping
             port: 8000
-          initialDelaySeconds: 20
+          initialDelaySeconds: 15
+          periodSeconds: 20
